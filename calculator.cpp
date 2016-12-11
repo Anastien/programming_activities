@@ -1,36 +1,53 @@
-// a wip calcultor
+// a wip calculator
 #include <iostream>
-#include<cmath>
+#include <cmath>
+#include <string>
+
 using namespace std;
+
 double expression();
 double term();
 double primary();
-int main()
-{
-	cout << "IN: ";
-	while (cin)
-	{
-		cout << "OUT: " << expression() <<"\n";
-	}
 
-	return 0;
-}
 // Tokens ystem ......................................................
 class Token // type to represent enties as nums, "(" or an operator.
 {
 	public:
 		char kind;
 		double value;
-	};
+};
 class Token_stream // a stream that eases reading tokens.
 {
 	public:
 		Token get();
 		void put_back(Token t);
+		char get_char();
+		void get_input();
 	private:
-		bool full;
+		bool full = false;
 		Token buffer;
-};
+		string input;
+		int i = -1;
+}
+Token_stream ts;
+void Token_stream::get_input()
+{
+	//
+	cin >> input;
+}
+char Token_stream::get_char()
+{
+	i+=1;
+	if(i == input.size()-1 && input[i] == ';')
+	{
+		return'l';// last element.
+	}
+	else if (i == input.size()-1)
+	{
+		// wrong input format!
+	}
+	return input[i];
+}
 Token Token_stream::get()
 {
 	if (full)
@@ -39,7 +56,7 @@ Token Token_stream::get()
 		return buffer;
 	}
 	char ch;
-	cin >> ch;
+	ch = ts.get_char();
 	switch (ch)
 	{
 		case '*':
@@ -55,18 +72,21 @@ Token Token_stream::get()
 			double num;
 			cin >> num;
 			return Token{'0', num}; // numeric token has kind = 0.
+		case ';':
+			return Token{ch};
+		case 'l':
+			return Token{ch};
 		default:
 		    5;
 			//illegal char.
 	}
-
 }
 void Token_stream::put_back(Token t)
 {
 	full = true;
 	buffer = t;
 }
-Token_stream ts;
+
 //....................................................................
 /*grammer system------------------------------------------------------
 the calculation is based on 3 functions:
@@ -85,6 +105,8 @@ double expression()
 			case '-':
 				result -= term();
 				break;
+			case ';':
+				return result;
 			default:
 				ts.put_back(t);
 				return result;
@@ -105,8 +127,10 @@ double term()
             case '/':
                 result /= primary();
                 break;
+            case ';':
+            	return result;
             default:
-                ts. put_back(t);
+                ts.put_back(t);
                 return result;
 		}
 	}
@@ -116,13 +140,35 @@ double primary()
 	Token pri = ts.get();
 	switch (pri.kind)
 	{	case '(':
-			{double result = expression();
+		{	double result = expression();
 			return result;
-			break;}
+		}
 		case '0':
 			return pri.value;
-			break;
+			return expression();
 		default:
+
 		    5;
     }		//bad primary.
+}
+//______________________________________________________________________
+int main()
+{
+	while (true)
+	{
+		cout << "IN:  ";
+		ts.get_input();
+		if(ts.get().kind == 'q') break;
+		while (true)
+		{
+			cout << "OUT: " << expression() <<"\n";
+			Token t = ts.get();
+			if (t.kind == 'l')
+            {
+                break;
+            }
+            else ts.put_back(t);
+		}
+	}
+	return 0;
 }
