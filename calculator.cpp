@@ -2,6 +2,9 @@
 #include <iostream>
 #include <cmath>
 #include <string>
+#include <vector>
+#include <cstdlib>
+
 
 using namespace std;
 
@@ -9,73 +12,115 @@ double expression();
 double term();
 double primary();
 
-// Tokens ystem ......................................................
+// Token system ......................................................
 class Token // type to represent enties as nums, "(" or an operator.
 {
 	public:
-		char kind;
+		//Token();
+		char kind; // for operators it is the operator itself,for numbers it is '0'.
 		double value;
 };
-class Token_stream // a stream that eases reading tokens.
+class Token_stream
 {
 	public:
 		Token get();
 		void put_back(Token t);
-		char get_char();
-		void get_input();
+		char get_char(); // fuck you cin :"(
+		void get_input();// fuck you cin :"(
+		//void chk_input();
+		//void correct_ip();
+		double compose_num();
 	private:
 		bool full = false;
 		Token buffer;
 		string input;
-		int i = -1;
-}
+		int i;// a var indicating next char of input.
+};
 Token_stream ts;
-void Token_stream::get_input()
+void Token_stream::get_input()//works ok.
 {
-	//
+	cout << "5";
 	cin >> input;
+	i = 0;
+	cout << input;
 }
-char Token_stream::get_char()
+/*void Token_stream::chk_input()
 {
-	i+=1;
-	if(i == input.size()-1 && input[i] == ';')
+
+}*/
+double Token_stream::compose_num() // has problems.
+{
+	double n = 0;
+	//vector<char> n_v;
+	string numstr = "";
+	while ( (input[i] == '.') || (input[i] == '0')|| (input[i] =='1')||
+		(input[i] == '2') || (input[i] == '3') || (input[i] == '4') ||
+		(input[i] == '5') || (input[i] =='6') || (input[i] =='7') ||
+		(input[i] =='8' )|| (input[i] =='9') )
 	{
-		return'l';// last element.
+		//n_v.push_back(input[i]);
+		numstr += ts.get_char();
 	}
-	else if (i == input.size()-1)
+	/*for (int i = n_v.size() - 1; i >= 0; --i)
+	{
+		n += int(n_v[i]) * pow(10, i);
+	}*/
+	//istringstream convert(numstr);
+	//convert >> n; // might fail
+	cout << '1';
+	n =  strtod(numstr.c_str(),NULL);
+	return n;
+
+}
+char Token_stream::get_char() // ignores ' '.
+{
+	int a = i;
+	if((i == input.size() - 1 ) && (input[i] == ';'))
+	{
+		return 'l';// last element.
+	}
+	/*else if ( i == input.size() - 1 )
 	{
 		// wrong input format!
+	}*/
+	while ( input[i] == ' ')
+	{
+		++i;
 	}
-	return input[i];
+	++i;
+	return input[a];
+
+
 }
 Token Token_stream::get()
 {
-	if (full)
+	if ( full )
 	{
 		full = false;
 		return buffer;
 	}
 	char ch;
 	ch = ts.get_char();
-	switch (ch)
+	switch ( ch )
 	{
 		case '*':
-        case '+':
-        case '/':
-        case '-':
+		case '+':
+		case '/':
+		case '-':
         case '(':
         case ')':
+        case ';':
+        case 'l':
+        case 'q':
 			return Token{ch};
-		case '.': case '1': case '2': case '3': case '4': case '5':
-		case '6': case '7': case '8': case '9':
-			cin.putback(ch);
-			double num;
-			cin >> num;
-			return Token{'0', num}; // numeric token has kind = 0.
-		case ';':
-			return Token{ch};
-		case 'l':
-			return Token{ch};
+		case '.': case '1': case '2': case '3':
+		case '4': case '5': case '6': case '7':
+		case '8': case '9':
+			{
+				--i;
+				double num = ts.compose_num();
+				return Token{'0', num}; // numeric token has kind = 0.
+			}
 		default:
 		    5;
 			//illegal char.
@@ -91,7 +136,7 @@ void Token_stream::put_back(Token t)
 /*grammer system------------------------------------------------------
 the calculation is based on 3 functions:
 */
-double expression()
+double expression() // starts by a number and ends with ';'.
 {
 	double result = term();
 	while (true)
@@ -106,14 +151,15 @@ double expression()
 				result -= term();
 				break;
 			case ';':
-				return result;
-			default:
 				ts.put_back(t);
 				return result;
+			/*default:
+				ts.put_back(t);
+				return result;*/
 		}
 	}
 }
-double term()
+double term() // 2*5*6 in exrepsion( 2*5*6 + 3*4 )is a term.
 {
 	double result = primary();
 	while (true)
@@ -128,14 +174,15 @@ double term()
                 result /= primary();
                 break;
             case ';':
-            	return result;
-            default:
+				ts.put_back(t);
+				return result;
+            /*default:
                 ts.put_back(t);
-                return result;
+                return result;*/
 		}
 	}
 }
-double primary()
+double primary()// 2 in (2*3+5) is a primary, experssions in '(exp)' are also primary
 {
 	Token pri = ts.get();
 	switch (pri.kind)
@@ -145,11 +192,10 @@ double primary()
 		}
 		case '0':
 			return pri.value;
-			return expression();
 		default:
-
-		    5;
-    }		//bad primary.
+			5;
+		//throw bad input
+    }
 }
 //______________________________________________________________________
 int main()
@@ -158,7 +204,13 @@ int main()
 	{
 		cout << "IN:  ";
 		ts.get_input();
-		if(ts.get().kind == 'q') break;
+		cout << "4";
+		Token q_chk = ts.get();
+		if(q_chk.kind == 'q')
+			break;
+		else
+			ts.put_back(q_chk);
+		cout << '2';
 		while (true)
 		{
 			cout << "OUT: " << expression() <<"\n";
@@ -167,7 +219,6 @@ int main()
             {
                 break;
             }
-            else ts.put_back(t);
 		}
 	}
 	return 0;
