@@ -1,10 +1,8 @@
 // a wip calculator
 #include <iostream>
+#include <sstream>
 #include <cmath>
 #include <string>
-#include <vector>
-#include <cstdlib>
-
 
 using namespace std;
 
@@ -23,75 +21,17 @@ class Token // type to represent enties as nums, "(" or an operator.
 class Token_stream
 {
 	public:
+		Token_stream()//constructor.
 		Token get();
 		void put_back(Token t);
-		char get_char(); // fuck you cin :"(
-		void get_input();// fuck you cin :"(
-		//void chk_input();
-		//void correct_ip();
-		double compose_num();
 	private:
 		bool full = false;
 		Token buffer;
-		string input;
+		//string input;
 		int i;// a var indicating next char of input.
+		stringstream instream;
 };
-Token_stream ts;
-void Token_stream::get_input()//works ok.
-{
-	cout << "5";
-	cin >> input;
-	i = 0;
-	cout << input;
-}
-/*void Token_stream::chk_input()
-{
 
-}*/
-double Token_stream::compose_num() // has problems.
-{
-	double n = 0;
-	//vector<char> n_v;
-	string numstr = "";
-	while ( (input[i] == '.') || (input[i] == '0')|| (input[i] =='1')||
-		(input[i] == '2') || (input[i] == '3') || (input[i] == '4') ||
-		(input[i] == '5') || (input[i] =='6') || (input[i] =='7') ||
-		(input[i] =='8' )|| (input[i] =='9') )
-	{
-		//n_v.push_back(input[i]);
-		numstr += ts.get_char();
-	}
-	/*for (int i = n_v.size() - 1; i >= 0; --i)
-	{
-		n += int(n_v[i]) * pow(10, i);
-	}*/
-	//istringstream convert(numstr);
-	//convert >> n; // might fail
-	cout << '1';
-	n =  strtod(numstr.c_str(),NULL);
-	return n;
-
-}
-char Token_stream::get_char() // ignores ' '.
-{
-	int a = i;
-	if((i == input.size() - 1 ) && (input[i] == ';'))
-	{
-		return 'l';// last element.
-	}
-	/*else if ( i == input.size() - 1 )
-	{
-		// wrong input format!
-	}*/
-	while ( input[i] == ' ')
-	{
-		++i;
-	}
-	++i;
-	return input[a];
-
-
-}
 Token Token_stream::get()
 {
 	if ( full )
@@ -99,30 +39,24 @@ Token Token_stream::get()
 		full = false;
 		return buffer;
 	}
+	double num;
 	char ch;
-	ch = ts.get_char();
+	istringstream >> ch;
 	switch ( ch )
 	{
-		case '*':
-		case '+':
-		case '/':
-		case '-':
-        case '(':
-        case ')':
-        case ';':
-        case 'l':
+		case '*': case '+': case '/': case '-':
+        case '(': case ')': case ';': case 'l':
         case 'q':
 			return Token{ch};
 		case '.': case '1': case '2': case '3':
 		case '4': case '5': case '6': case '7':
 		case '8': case '9':
 			{
-				--i;
-				double num = ts.compose_num();
+				istringstream.unget();
+				istringstream >> num;
 				return Token{'0', num}; // numeric token has kind = 0.
 			}
 		default:
-		    5;
 			//illegal char.
 	}
 }
@@ -197,13 +131,25 @@ double primary()// 2 in (2*3+5) is a primary, experssions in '(exp)' are also pr
 		//throw bad input
     }
 }
+string get_input() //input only span single line.
+{
+	//gets and slightly corrects input formt.
+	getline(cin, string input);
+	if (input != 'q')
+	{
+		input.back() = 'l';// convert last; to 'l'
+
+	}
+
+
+}
 //______________________________________________________________________
 int main()
 {
 	while (true)
 	{
 		cout << "IN:  ";
-		ts.get_input();
+		Token_stream ts {input};
 		cout << "4";
 		Token q_chk = ts.get();
 		if(q_chk.kind == 'q')
