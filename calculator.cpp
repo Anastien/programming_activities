@@ -3,6 +3,7 @@
 #include <sstream>
 #include <cmath>
 #include <string>
+#include <exception>
 
 using namespace std;
 
@@ -21,18 +22,35 @@ class Token // type to represent enties as nums, "(" or an operator.
 class Token_stream
 {
 	public:
-		Token_stream()//constructor.
+		Token_stream(string);//constructor.
+		Token_stream();
 		Token get();
 		void put_back(Token t);
 	private:
 		bool full = false;
 		Token buffer;
-		//string input;
 		int i;// a var indicating next char of input.
-		stringstream instream;
+		stringstream instr{};
 };
+class Wrong_format : public exception
+{
+	public:
+		Wrong_format(const string &errMessage) : errMessage_(errMessage){};
+		// overriden what() method from exception class
+	  	virtual const char* what() const throw() { return errMessage_.c_str(); }
+	private:
+	  	string errMessage_;
+};
+Token_stream::Token_stream(string input)
+{
+    instr.str(input);
+    cout << instr.str();
+}
+Token_stream::Token_stream()
+{
 
-Token Token_stream::get()
+}
+Token Token_stream::get() // only produces legal tokens.
 {
 	if ( full )
 	{
@@ -41,7 +59,12 @@ Token Token_stream::get()
 	}
 	double num;
 	char ch;
-	istringstream >> ch;
+	instr >> ch;
+	/*if(! instr )
+	{
+		throw Wrong_format{"Wront format! got no input. \ntype f for format.\n"};
+
+	}*/
 	switch ( ch )
 	{
 		case '*': case '+': case '/': case '-':
@@ -52,12 +75,22 @@ Token Token_stream::get()
 		case '4': case '5': case '6': case '7':
 		case '8': case '9':
 			{
-				istringstream.unget();
-				istringstream >> num;
+				instr.unget();
+				/*if(!(instr >> num))//not sure if this can happen!
+				{
+					throw Wrong_format{"Wront format! excpeted a num. type f for format."};
+				}*/
+				instr >> num;
 				return Token{'0', num}; // numeric token has kind = 0.
 			}
 		default:
-			//illegal char.
+			stringstream sss;
+			cout << 5;
+			sss << ch;
+			cout << sss.str();
+            string msg = "Wront format! illegal char. \ntype f for format.\n";
+            throw Wrong_format{msg};
+
 	}
 }
 void Token_stream::put_back(Token t)
@@ -65,7 +98,51 @@ void Token_stream::put_back(Token t)
 	full = true;
 	buffer = t;
 }
+string get_input() //input only span single line.
+{
+	//gets and slightly corrects input formt.
+	string input;
+	getline(cin, input);
+	/*if (input[0] != 'q')
+	{
+		input.back() = 'l';// convert last; to 'l'
 
+	}*/
+	return input;
+}
+//*___*
+Token_stream ts;
+int main()
+{
+	while (true)
+	{
+		try
+		{
+			cout << "IN:  ";
+			Token_stream ts (get_input());
+			Token q_chk = ts.get();
+			if(q_chk.kind == 'q')
+				break;
+			else
+				ts.put_back(q_chk);
+			while (true)
+			{
+				cout << "OUT: " << expression() <<"\n";
+				Token t = ts.get();
+				if (t.kind == 'l')
+	            {
+	                break;
+	            }
+			}
+		}
+		catch(Wrong_format &error)
+		{
+			cout << error.what();
+		}
+	}
+
+	return 0;
+}
 //....................................................................
 /*grammer system------------------------------------------------------
 the calculation is based on 3 functions:
@@ -87,9 +164,6 @@ double expression() // starts by a number and ends with ';'.
 			case ';':
 				ts.put_back(t);
 				return result;
-			/*default:
-				ts.put_back(t);
-				return result;*/
 		}
 	}
 }
@@ -110,9 +184,6 @@ double term() // 2*5*6 in exrepsion( 2*5*6 + 3*4 )is a term.
             case ';':
 				ts.put_back(t);
 				return result;
-            /*default:
-                ts.put_back(t);
-                return result;*/
 		}
 	}
 }
@@ -126,46 +197,7 @@ double primary()// 2 in (2*3+5) is a primary, experssions in '(exp)' are also pr
 		}
 		case '0':
 			return pri.value;
-		default:
-			5;
-		//throw bad input
     }
 }
-string get_input() //input only span single line.
-{
-	//gets and slightly corrects input formt.
-	getline(cin, string input);
-	if (input != 'q')
-	{
-		input.back() = 'l';// convert last; to 'l'
 
-	}
-
-
-}
 //______________________________________________________________________
-int main()
-{
-	while (true)
-	{
-		cout << "IN:  ";
-		Token_stream ts {input};
-		cout << "4";
-		Token q_chk = ts.get();
-		if(q_chk.kind == 'q')
-			break;
-		else
-			ts.put_back(q_chk);
-		cout << '2';
-		while (true)
-		{
-			cout << "OUT: " << expression() <<"\n";
-			Token t = ts.get();
-			if (t.kind == 'l')
-            {
-                break;
-            }
-		}
-	}
-	return 0;
-}
